@@ -189,6 +189,7 @@ def migrations(ctx):
     ctx.run(f"python manage.py migrate --noinput --settings={_localsettings()} --database=datastore", pty=True)
     try:
         ctx.run(f"python manage.py rebuild_index --noinput --settings={_localsettings()}", pty=True)
+        # TODO: Fix this, Unknown command: 'rebuild_index', seems to be a haystack thing
     except Exception:
         pass
 
