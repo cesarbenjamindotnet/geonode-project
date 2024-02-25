@@ -21,7 +21,7 @@ GeoNode template project. Generates a django project with GeoNode support.
     python3.10 -m venv ~/.venvs/project_name
     source ~/.venvs/{{ project_name }}/bin/activate
 
-    pip install Django==3.2.*
+    pip install Django==4.2.10
 
     mkdir ~/project_name
   ```
