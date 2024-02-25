@@ -1,3 +1,2 @@
--e git+https://github.com/inecc-anvcc-web/geonode-mapstore-client.git@anvcc#egg=django_geonode_mapstore_client
 -e git+https://github.com/inecc-anvcc-web/geonode-importer.git@anvcc#egg=geonode-importer
 -e git+https://github.com/inecc-anvcc-web/geonode.git@anvcc#egg=GeoNode
