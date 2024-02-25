@@ -2,8 +2,7 @@
 
 GeoNode template project. Generates a django project with GeoNode support. 
 
-Proyecto template de GeoNode. Genera un proyecto django con soporte para GeoNode. 
-
+Proyecto template de GeoNode. Genera un proyecto django con soporte para GeoNode.
 
 ## Table of Contents
 
