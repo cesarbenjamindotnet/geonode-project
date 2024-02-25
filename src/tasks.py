@@ -340,13 +340,6 @@ def migrations(ctx):
         f"python manage.py migrate --noinput --settings={_localsettings()} --database=datastore",
         pty=True,
     )
-    try:
-        ctx.run(
-            f"python manage.py rebuild_index --noinput --settings={_localsettings()}",
-            pty=True,
-        )
-    except Exception:
-        pass
 
 
 @task
@@ -402,7 +395,7 @@ def fixtures(ctx):
 def collectstatic(ctx):
     print("************************static artifacts******************************")
     ctx.run(
-        f"django-admin.py collectstatic --noinput \
+        f"python manage.py collectstatic --noinput \
 --settings={_localsettings()}",
         pty=True,
     )
