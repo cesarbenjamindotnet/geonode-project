@@ -64,8 +64,8 @@ location /geoserver {
 }
 
 # Atlas
-location /atlas/ {
-  alias /mnt/volumes/statics/atlas/;
+location /atlas {
+  alias /mnt/volumes/statics/atlas;
 
   gzip_static always;
   expires 30d;
