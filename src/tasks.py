@@ -442,11 +442,7 @@ def updateadmin(ctx):
         os.environ.get("ADMIN_PASSWORD", "admin"),
         os.environ.get("ADMIN_EMAIL", "admin@example.org"),
     )
-    ctx.run(
-        f"django-admin.py loaddata /tmp/django_admin_docker.json \
---settings={_localsettings()}",
-        pty=True,
-    )
+    ctx.run(f"python -W ignore manage.py loaddata /tmp/django_admin_docker.json --settings={_localsettings()}", pty=True)
 
 
 @task
