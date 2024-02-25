@@ -1,2 +1,1 @@
--e git+https://github.com/inecc-anvcc-web/geonode-importer.git@anvcc#egg=geonode-importer
 -e git+https://github.com/inecc-anvcc-web/geonode.git@anvcc#egg=GeoNode
