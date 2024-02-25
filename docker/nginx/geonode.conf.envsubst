@@ -72,6 +72,8 @@ location /atlas/ {
   access_log off;
   add_header Pragma "public";
   add_header Cache-Control "max-age=31536000, public";
+
+  try_files $uri $uri/ /atlas/index.html;
 }
 
 # GeoNode
