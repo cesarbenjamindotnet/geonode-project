@@ -2,7 +2,7 @@
 
 GeoNode template project. Generates a django project with GeoNode support. 
 
-Proyecto template de GeoNode. Genera un proyecto django con soporte para GeoNode. 
+Proyecto template de GeoNode. Genera un proyecto django con soporte para GeoNode.
 
 ## Table of Contents
 
@@ -20,22 +20,22 @@ Proyecto template de GeoNode. Genera un proyecto django con soporte para GeoNode
 ## Quick Docker Start
 
   ```bash
-    python3.10 -m venv ~/.venvs/project_name
+    python3.10 -m venv ~/.venvs/{{ project_name }}
     source ~/.venvs/{{ project_name }}/bin/activate
 
     pip install Django==4.2.10
 
-    mkdir ~/project_name
+    mkdir ~/{{ project_name }}
   ```
 
   ```bash
-    GN_VERSION=master
-
-    django-admin startproject --template=https://github.com/GeoNode/geonode-project/archive/refs/heads/$GN_VERSION.zip -e py,sh,md,rst,json,yml,ini,env,sample,properties -n monitoring-cron -n Dockerfile project_name ~/project_name
+    GN_VERSION=anvcc
+anvcc.zip
+    django-admin startproject --template=https://github.com/inecc-anvcc-web/geonode-project/archive/refs/heads/$GN_VERSION.zip -e py,sh,md,rst,json,yml,ini,env,sample,properties -n monitoring-cron -n Dockerfile project_name ~/project_name
   ```
 
   ```bash
-    cd ~/project_name
+    cd ~/{{ project_name }}
     python create-envfile.py 
   ```
 `create-envfile.py` accepts the following arguments:
@@ -76,7 +76,7 @@ To setup your project follow these instructions:
 1. Generate the project
 
     ```bash
-    git clone https://github.com/GeoNode/geonode-project.git -b <your_branch>
+    git clone https://github.com/inecc-anvcc-web/geonode-project.git -b <your_branch>
     source /usr/share/virtualenvwrapper/virtualenvwrapper.sh
     mkvirtualenv --python=/usr/bin/python3 {{ project_name }}
     pip install Django==3.2.16
