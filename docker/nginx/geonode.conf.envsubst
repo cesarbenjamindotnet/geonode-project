@@ -69,7 +69,7 @@ location /atlas {
   root /mnt/volumes/statics;
 
   gzip_static always;
-  expires 1d;
+  expires 30s;
   access_log off;
   add_header Pragma "public";
   add_header Cache-Control "max-age=31536000, public";
