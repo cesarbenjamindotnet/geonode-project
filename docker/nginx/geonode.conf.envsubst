@@ -65,15 +65,10 @@ location /geoserver {
 
 # Atlas
 location /atlas {
-  # alias /mnt/volumes/statics/atlas;
-  root /mnt/volumes/statics;
+  alias /mnt/volumes/statics/atlas;
+  # root /mnt/volumes/statics;
 
-  gzip_static always;
-  expires 30s;
   access_log off;
-  add_header Pragma "public";
-  add_header Cache-Control "max-age=31536000, public";
-
   try_files $uri $uri/ /atlas/index.html;
 }
 
