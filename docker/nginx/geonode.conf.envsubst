@@ -63,12 +63,14 @@ location /geoserver {
   client_max_body_size 0;
 }
 
-# Atlas
+# Atlas                        
 location /atlas {
   alias /mnt/volumes/statics/atlas;
 
   access_log off;
-  try_files /atlas/$uri /atlas/$uri/ /atlas/index.html;
+  expires 1s;
+  add_header Cache-Control no-cache;
+  try_files $uri $uri/ /atlas/;
 }
 
 # GeoNode
