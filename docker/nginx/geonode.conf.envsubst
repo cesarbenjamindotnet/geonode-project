@@ -66,10 +66,9 @@ location /geoserver {
 # Atlas
 location /atlas {
   alias /mnt/volumes/statics/atlas;
-  # root /mnt/volumes/statics;
 
   access_log off;
-  try_files $uri $uri/ /atlas/index.html;
+  try_files /atlas/$uri /atlas/$uri/ /atlas/index.html;
 }
 
 # GeoNode
