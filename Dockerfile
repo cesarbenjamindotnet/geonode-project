@@ -25,7 +25,7 @@ RUN chmod +x /usr/bin/wait-for-databases
 RUN chmod +x /usr/src/{{project_name}}/tasks.py \
     && chmod +x /usr/src/{{project_name}}/entrypoint.sh
 
-COPY docker/nginx/atlas/ /mnt/volumes/statics/atlas/
+# COPY docker/nginx/atlas /mnt/volumes/statics/atlas/
 
 COPY src/celery.sh /usr/bin/celery-commands
 RUN chmod +x /usr/bin/celery-commands
@@ -49,6 +49,12 @@ RUN apt-get autoremove --purge &&\
 
 # Export ports
 EXPOSE 8000
+
+# WORKDIR /
+# RUN rm -rf /mnt/volumes/statics/atlas/
+# RUN mkdir -p /mnt/volumes/statics/atlas/
+# COPY ./atlas/ /mnt/volumes/statics/atlas/
+COPY src/atlas /mnt/volumes/statics/
 
 # We provide no command or entrypoint as this image can be used to serve the django project or run celery tasks
 # ENTRYPOINT /usr/src/{{project_name}}/entrypoint.sh
