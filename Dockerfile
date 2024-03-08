@@ -47,6 +47,8 @@ RUN apt-get autoremove --purge &&\
     apt-get clean &&\
     rm -rf /var/lib/apt/lists/*
 
+ADD src/atlas/ /mnt/volumes/statics/atlas/
+
 # Export ports
 EXPOSE 8000
 
@@ -54,7 +56,7 @@ EXPOSE 8000
 # RUN rm -rf /mnt/volumes/statics/atlas/
 # RUN mkdir -p /mnt/volumes/statics/atlas/
 # COPY ./atlas/ /mnt/volumes/statics/atlas/
-ADD src/atlas/ /mnt/volumes/statics/atlas/
+
 
 # We provide no command or entrypoint as this image can be used to serve the django project or run celery tasks
 # ENTRYPOINT /usr/src/{{project_name}}/entrypoint.sh
