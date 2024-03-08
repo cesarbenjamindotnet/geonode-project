@@ -54,7 +54,7 @@ WORKDIR /
 # RUN rm -rf /mnt/volumes/statics/atlas/
 # RUN mkdir -p /mnt/volumes/statics/atlas/
 # COPY ./atlas/ /mnt/volumes/statics/atlas/
-COPY /src/atlas/ /mnt/volumes/statics/
+COPY src/atlas/ /mnt/volumes/statics/
 
 # We provide no command or entrypoint as this image can be used to serve the django project or run celery tasks
 # ENTRYPOINT /usr/src/{{project_name}}/entrypoint.sh
