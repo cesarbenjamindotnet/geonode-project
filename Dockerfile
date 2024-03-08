@@ -50,7 +50,7 @@ RUN apt-get autoremove --purge &&\
 # Export ports
 EXPOSE 8000
 
-# WORKDIR /
+WORKDIR /
 # RUN rm -rf /mnt/volumes/statics/atlas/
 # RUN mkdir -p /mnt/volumes/statics/atlas/
 # COPY ./atlas/ /mnt/volumes/statics/atlas/
