@@ -47,8 +47,6 @@ RUN apt-get autoremove --purge &&\
     apt-get clean &&\
     rm -rf /var/lib/apt/lists/*
 
-ADD src/atlas/ /mnt/volumes/statics/atlas/
-
 # Export ports
 EXPOSE 8000
 

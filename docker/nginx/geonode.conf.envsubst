@@ -63,9 +63,9 @@ location /geoserver {
   client_max_body_size 0;
 }
 
-# Atlas                        
+# Atlas
 location /atlas {
-  alias /mnt/volumes/statics/atlas;
+  alias /mnt/volumes/atlas;
 
   access_log off;
   expires 1s;
