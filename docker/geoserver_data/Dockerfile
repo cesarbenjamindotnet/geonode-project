@@ -3,8 +3,8 @@ FROM geonode/geoserver_data:${BASE_IMAGE_VERSION}
 
 # ADD styles/* /geoserver_data/data/styles/
 
-# RUN mkdir -p /geoserver_data/data/data/
-COPY data/ /geoserver_data/data/
+RUN mkdir -p /geoserver_data/data/data/
+COPY data/* /geoserver_data/data/data/
 
-COPY workspaces/anvcc/ /geoserver_data/data/workspaces/
+COPY workspaces/anvcc/ /geoserver_data/data/workspaces/anvcc/
 COPY styles/* /geoserver_data/data/styles/
