@@ -1,0 +1,17 @@
+<layer>
+  <name>estados_inegi</name>
+  <id>LayerInfoImpl-73a02208:18e2aed398b:-5103</id>
+  <type>VECTOR</type>
+  <defaultStyle>
+    <id>StyleInfoImpl-73a02208:18e2aed398b:-5102</id>
+  </defaultStyle>
+  <resource class="featureType">
+    <id>FeatureTypeInfoImpl-73a02208:18e2aed398b:-5104</id>
+  </resource>
+  <attribution>
+    <logoWidth>0</logoWidth>
+    <logoHeight>0</logoHeight>
+  </attribution>
+  <dateCreated>2024-03-11 01:51:03.945 UTC</dateCreated>
+  <dateModified>2024-03-11 01:52:29.202 UTC</dateModified>
+</layer>

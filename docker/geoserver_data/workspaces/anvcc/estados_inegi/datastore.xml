@@ -1,0 +1,22 @@
+<dataStore>
+  <id>DataStoreInfoImpl-73a02208:18e2aed398b:-5106</id>
+  <name>estados_inegi</name>
+  <description>estados_inegi</description>
+  <type>GeoPackage</type>
+  <enabled>true</enabled>
+  <workspace>
+    <id>WorkspaceInfoImpl-73a02208:18e2aed398b:-5108</id>
+  </workspace>
+  <connectionParameters>
+    <entry key="fetch size">32</entry>
+    <entry key="Expose primary keys">false</entry>
+    <entry key="Batch insert size">1</entry>
+    <entry key="database">file:data/estados_inegi.gpkg</entry>
+    <entry key="read_only">true</entry>
+    <entry key="dbtype">geopkg</entry>
+    <entry key="namespace">anvcc</entry>
+  </connectionParameters>
+  <__default>false</__default>
+  <dateCreated>2024-03-11 01:50:16.545 UTC</dateCreated>
+  <disableOnConnFailure>false</disableOnConnFailure>
+</dataStore>

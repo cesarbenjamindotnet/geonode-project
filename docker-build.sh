@@ -1,1 +1,1 @@
-docker compose build --no-cache; docker compose stop; docker compose up -d; docker system prune -a
+COMPOSE_DOCKER_CLI_BUILD=1 DOCKER_BUILDKIT=1 docker compose build --no-cache; docker compose stop; docker compose up -d; docker system prune -a
