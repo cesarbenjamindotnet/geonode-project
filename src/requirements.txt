@@ -1,1 +1,1 @@
--e git+https://github.com/inecc-anvcc-web/geonode.git@anvcc#egg=GeoNode
+-e git+https://github.com/anvcc-inecc/geonode.git@anvcc#egg=GeoNode
