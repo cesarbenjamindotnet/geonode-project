@@ -1,6 +1,6 @@
 {
   "publicPath": "/atlas/",
   "logo_filename": "logo_atlas.png",
-  "estados_alternate": "geonode:estados_inegi",
+  "estados_alternate": "anvcc:estados_inegi",
   "estados_style": "contorno_estados"
 }
