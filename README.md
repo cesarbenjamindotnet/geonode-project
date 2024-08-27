@@ -2,295 +2,159 @@
 
 GeoNode template project. Generates a django project with GeoNode support.
 
-## Table of Contents
+# Manual de instalación
 
--  [Quick Docker Start](#quick-docker-start)
--  [Developer Workshop](#developer-workshop)
--  [Create a custom project](#create-a-custom-project)
--  [Start your server using Docker](#start-your-server-using-docker)
--  [Run the instance in development mode](#run-the-instance-in-development-mode)
--  [Run the instance on a public site](#run-the-instance-on-a-public-site)
--  [Stop the Docker Images](#stop-the-docker-images)
--  [Backup and Restore from Docker Images](#backup-and-restore-the-docker-images)
--  [Recommended: Track your changes](#recommended-track-your-changes)
--  [Hints: Configuring `requirements.txt`](#hints-configuring-requirementstxt)
+## Requisitos
 
-## Quick Docker Start
+Servidor físico o máquina virtual con 8 CPUs y 16 GB de RAM y 500GB de espacio en disco. El servidor debe tener el sistema operativo Ubuntu Server LTS vigente (al momento de este documento, es la versión 22.04.3 LTS).
 
-  ```bash
-    python3.10 -m venv ~/.venvs/project_name
-    source ~/.venvs/{{ project_name }}/bin/activate
+# Máquina Virtual
 
-    pip install Django==3.2.*
+Para correr el servicio es necesario utilizar una máquina virtual en GCP de tipo N2 con 8 CPUs y 14 GB de RAM en la zona us-central1-c, con una interfaz de red de tipo gVNIC. 
 
-    mkdir ~/project_name
-  ```
+El proyecto donde vive la máquina virtual debe correr en un proyecto vinculado a la red compartida en la vpc de producción y debe tener reservada una IP pública externa
 
-  ```bash
-    GN_VERSION=master
+Implementación actual 
 
-    django-admin startproject --template=https://github.com/GeoNode/geonode-project/archive/refs/heads/$GN_VERSION.zip -e py,sh,md,rst,json,yml,ini,env,sample,properties -n monitoring-cron -n Dockerfile project_name ~/project_name
-  ```
+La implementación actual corre dentro del proyecto mty-geonode para producción.
 
-  ```bash
-    cd ~/project_name
-    python create-envfile.py 
-  ```
-`create-envfile.py` accepts the following arguments:
+El proyecto mty-geonode está vinculado a la VPC compartida del proyecto mty-network-trv en la red de VPC denominada vpc-prod (10.200.0.0/18).
 
-- `--https`: Enable SSL. It's disabled by default
-- `--env_type`: 
-   - When set to `prod` `DEBUG` is disabled and the creation of a valid `SSL` is requested to Letsencrypt's ACME server
-   - When set to `test`  `DEBUG` is disabled and a test `SSL` certificate is generated for local testing
-   - When set to `dev`  `DEBUG` is enabled and no `SSL` certificate is generated
-- `--hostname`: The URL that whill serve GeoNode (`localhost` by default)
-- `--email`: The administrator's email. Notice that a real email and a valid SMPT configurations are required if  `--env_type` is seto to `prod`. Letsencrypt uses to email for issuing the SSL certificate 
-- `--geonodepwd`: GeoNode's administrator password. A random value is set if left empty
-- `--geoserverpwd`: GeoNode's administrator password. A random value is set if left empty
-- `--pgpwd`: PostgreSQL's administrator password. A random value is set if left empty
-- `--dbpwd`: GeoNode DB user role's password. A random value is set if left empty
-- `--geodbpwd`: GeoNode data DB user role's password. A random value is set if left empty
-- `--clientid`: Client id of Geoserver's GeoNode Oauth2 client. A random value is set if left empty
-- `--clientsecret`: Client secret of Geoserver's GeoNode Oauth2 client. A random value is set if left empty
-```bash
-  docker compose build
-  docker compose up -d
+Respecto a la red se tienen reservadas una ip externa y una interna, la ip interna es 10.200.0.5 y la externa es 35.226.137.213. Además se utilizan las etiquetas de red allow-iap-ssh para poder conectar al servidor por SSH y allow-web, para permitir acceso desde el exterior a los puertos TCP de HTTP.
+
+# Cloud Storage
+
+## Bucket
+
+Para almacenar archivos de manera persistente, se utilizan Buckets de Cloud Storage, para este caso se creó un bucket llamado **mty-geonode-volumes** multiregión con Autoclass con la opción “Habilitar la opción para permitir las transiciones de objetos a las clases Coldline y Archive” activada. Con prevención de acceso público a este bucket uniforme. Con prevención de acceso público. Con la misma configuración hay que crear un bucket llamado **mty-geonode-media**. 
+
+```mty-geonode-media``` será utilizado para el almacenamiento de subida desde django  
+```mty-geonode-volumes``` será usado para todo lo demás
+
+Hay que montar el bucket volumes en fstab para poder montar los volúmenes de docker, para ello agregar al final del archivo /etc/fstab la siguiente línea: 
+
+```
+mty-geonode-volumes /mnt/mty-geonode-volumes gcsfuse rw,\_netdev,allow\_other,file\_mode=777,dir\_mode=777,uid=0,gid=0,key\_file=/root/gcs\_volumes\_sa\_keyfi  
+le.json
 ```
 
-## Developer Workshop
+Además, hay que crear algunos directorios dentro del bucket:
+```
+mkdir /mnt/mty-geonode-volumes/datosmty-backup-restore  
+mkdir /mnt/mty-geonode-volumes/datosmty-dbbackups  
+mkdir /mnt/mty-geonode-volumes/datosmty-geoserver-styles  
+mkdir /mnt/mty-geonode-volumes/datosmty-geoserver-workspaces  
+mkdir /mnt/mty-geonode-volumes/datosmty-statics  
+mkdir /mnt/mty-geonode-volumes/datosmty-uploaded  
+mkdir /mnt/mty-geonode-volumes/datosmty-backup-restore
+```
+## Service Account
 
-Available at
+Para acceder a los buckets hay que crear un archivo de cuenta de servicio que nombramos **gcs\_sa\_keyfile.json**, para lo cual se crea una cuenta de servicio en el apartado **IAM** de la consola de GCP con el nombre **gcs-objects-user** con el rol **Usuario de objetos de almacenamiento**. Una vez creada la cuenta de servicio hay que generar y descargar un archivo llave para dicha cuenta de servicio. renombrarlo y ubicarlo en la raíz del directorio **datosmty** que se creó al inicializar el proyecto con django-admin.
 
-  ```bash
-    http://geonode.org/dev-workshop
-  ```
+Hay que tener cuidado de no publicar el archivo de cuenta de servicio en el repositorio de código. este se debe colocar posteriormente de manera manual
 
-## Create a custom project
+## Docker
 
-**NOTE**: *You can call your geonode project whatever you like **except 'geonode'**. Follow the naming conventions for python packages (generally lower case with underscores (``_``). In the examples below, replace ``{{ project_name }}`` with whatever you would like to name your project.*
+Docker es un sistema de manejo de contenedores, un contenedor es una forma de distribuir aplicaciones en la modalidad código como servicio. Es necesario tener instalado Docker en el servidor donde corre el sistema. Para instalar Docker hay que llevar a cabo los siguientes pasos en el servidor, habiéndose conectado por SSH.
 
-To setup your project follow these instructions:
+## Actualizar el sistema
 
-1. Generate the project
+Siempre es recomendado actualizar cualquier sistema, así se encuentre recién instalado, también es recomendado aplicar las últimas actualizaciones periódicamente.
 
-    ```bash
-    git clone https://github.com/GeoNode/geonode-project.git -b <your_branch>
-    source /usr/share/virtualenvwrapper/virtualenvwrapper.sh
-    mkvirtualenv --python=/usr/bin/python3 {{ project_name }}
-    pip install Django==3.2.16
+Ejecutar los siguientes comandos, uno a la vez, cuando finalice uno, introducir el siguiente, hasta el final.
+```
+- **sudo apt-get update**  
+- **sudo apt-get upgrade \-y**
+```
+  *en caso de que se nos pregunte por servicios a reiniciar dejar todo como está y simplemente dar \[ok\]*
+```
+- **sudo apt autoremove \-y**
+```
+## Eliminar cualquier rastro de Docker
 
-    django-admin startproject --template=./geonode-project -e py,sh,md,rst,json,yml,ini,env,sample,properties -n monitoring-cron -n Dockerfile {{ project_name }}
+Considerando un escenario donde no se trate de un servidor recién instalado y que pudiera tener docker instalado en una versión antigua, podemos actualizar a la versión más reciente, pero primero hay que eliminar todos los posibles remanentes que pudieran existir instalados en el sistema operativo.
 
-    cd {{ project_name }}
-    ```
+Ejecutar los siguientes comandos, uno a la vez, cuando finalice uno, introducir el siguiente, hasta el final.
+```
+- **sudo apt remove docker-desktop \--purge**  
+- **sudo apt remove docker.io \--purge**  
+- **sudo rm \-r $HOME/.docker/desktop**  
+- **sudo rm /usr/local/bin/com.docker.cli**
+```
+  *Es posible que algunos de los comandos del punto anterior marquen algún error, esto es en caso de que los paquetes referidos no hayan sido encontrados, en caso de error no es un problema, solo nos está informando que no puede eliminar algo que no encontró, se puede ignorar los mensajes de error sin mayor problema.*
 
-2. Create the .env file
+## Descargar repositorio de Docker
 
-    An `.env` file is requird to run the application. It can be created from the `.env.sample` either manually or with the create-envfile.py script.
+Ubuntu Server 22.04 tiene en su repositorio oficial docker, pero es una versión muy antigua (20.10); a continuación vamos a utilizar un método no oficial de Ubuntu pero si oficial de docker para instalar en a modo de Ubuntu, Docker, pero en la versión más actual disponible.
 
-    The script accepts several parameters to create the file, in detail:
-
-    - *hostname*: e.g. master.demo.geonode.org, default localhost
-    - *https*: (boolean), default value is False
-    - *email*: Admin email (this is required if https is set to True since a valid email is required by Letsencrypt certbot)
-    - *env_type*: `prod`, `test` or `dev`. It will set the `DEBUG` variable to `False` (`prod`, `test`) or `True` (`dev`)
-    - *geonodepwd*: GeoNode admin password (required inside the .env)
-    - *geoserverpwd*: Geoserver admin password (required inside the .env)
-    - *pgpwd*: PostgreSQL password (required inside the .env)
-    - *dbpwd*: GeoNode DB user password (required inside the .env)
-    - *geodbpwd*: Geodatabase user password (required inside the .env)
-    - *clientid*: Oauth2 client id (required inside the .env)
-    - *clientsecret*: Oauth2 client secret (required inside the .env)
-    - *secret key*: Django secret key (required inside the .env)
-    - *sample_file*: absolute path to a env_sample file used to create the env_file. If not provided, the one inside the GeoNode project is used.
-    - *file*: absolute path to a json file that contains all the above configuration
-
-     **NOTE:**
-    - if the same configuration is passed in the json file and as an argument, the CLI one will overwrite the one in the JSON file
-    - If some value is not provided, a random string is used
-
-      Example USAGE
-
-      ```bash
-      python create-envfile.py -f /opt/core/geonode-project/file.json \
-        --hostname localhost \
-        --https \
-        --email random@email.com \
-        --geonodepwd gn_password \
-        --geoserverpwd gs_password \
-        --pgpwd pg_password \
-        --dbpwd db_password \
-        --geodbpwd _db_password \
-        --clientid 12345 \
-        --clientsecret abc123 
-      ```
-
-      Example JSON expected:
-
-      ```JSON
-      {
-        "hostname": "value",
-        "https": "value",
-        "email": "value",
-        "geonodepwd": "value",
-        "geoserverpwd": "value",
-        "pgpwd": "value",
-        "dbpwd": "value",
-        "geodbpwd": "value",
-        "clientid": "value",
-        "clientsecret": "value"
-      } 
-      ```
-
-### Start your server
-*Skip this part if you want to run the project using Docker instead* see [Start your server using Docker](#start-your-server-using-docker)
-
-1. Setup the Python Dependencies
-
-    **NOTE**: *Important: modify your `requirements.txt` file, by adding the `GeoNode` branch before continue!*
-
-    (see [Hints: Configuring `requirements.txt`](#hints-configuring-requirementstxt))
-
-    ```bash
-    cd src
-    pip install -r requirements.txt --upgrade
-    pip install -e . --upgrade
-
-    # Install GDAL Utilities for Python
-    pip install pygdal=="`gdal-config --version`.*"
-
-    # Dev scripts
-    mv ../.override_dev_env.sample ../.override_dev_env
-    mv manage_dev.sh.sample manage_dev.sh
-    mv paver_dev.sh.sample paver_dev.sh
-
-    source ../.override_dev_env
-
-    # Using the Default Settings
-    sh ./paver_dev.sh reset
-    sh ./paver_dev.sh setup
-    sh ./paver_dev.sh sync
-    sh ./paver_dev.sh start
-    ```
-
-2. Access GeoNode from browser
-
-    **NOTE**: default admin user is ``admin`` (with pw: ``admin``)
-
-    ```bash
-    http://localhost:8000/
-    ```
-
-### Start your server using Docker
-
-You need Docker 1.12 or higher, get the latest stable official release for your platform.
-Once you have the project configured run the following command from the root folder of the project.
-
-1. Run `docker-compose` to start it up (get a cup of coffee or tea while you wait)
-
-    ```bash
-    docker-compose build --no-cache
-    docker-compose up -d
-    ```
-
-    ```bash
-    set COMPOSE_CONVERT_WINDOWS_PATHS=1
-    ```
-
-    before running `docker-compose up`
-
-2. Access the site on http://localhost/
-
-## Run the instance in development mode
-
-### Use dedicated docker-compose files while developing
-
-**NOTE**: In this example we are going to keep localhost as the target IP for GeoNode
-
-  ```bash
-  docker-compose -f docker-compose.development.yml -f docker-compose.development.override.yml up
-  ```
-
-## Run the instance on a public site
-
-### Preparation of the image (First time only)
-
-**NOTE**: In this example we are going to publish to the public IP http://123.456.789.111
-
-```bash
-vim .env
-  --> replace localhost with 123.456.789.111 everywhere
+Ejecutar los siguientes comandos, uno a la vez, cuando finalice uno, introducir el siguiente, hasta el final.
+```
+- **sudo apt-get install ca-certificates curl gnupg lsb-release**  
+- **sudo mkdir \-p /etc/apt/keyrings**  
+- **curl \-fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg \--dearmor \-o /etc/apt/keyrings/docker.gpg**  
+- **echo "deb \[arch=$(dpkg \--print-architecture) signed-by=/etc/apt/keyrings/docker.gpg\] https://download.docker.com/linux/ubuntu $(lsb\_release \-cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list \> /dev/null**  
+- **sudo apt update**  
+- **sudo apt install docker-ce \-y**
 ```
 
-### Startup the image
+## Ejecutar Docker como usuario no root
 
-```bash
-docker-compose up --build -d
+Ejecutar los siguientes comandos, uno a la vez, cuando finalice uno, introducir el siguiente, hasta el final.
+```
+- **sudo groupadd docker**  
+- **sudo usermod \-aG docker $USER**
+```
+## Instalar herramientas iniciales
+
+Debemos instalar algunas herramientas, librerías y dependencias iniciales necesarias para construir el sistema e instalarlo, build-essential es un metapaquete que contiene varias herramientas de desarrollo y compilación; python3-pip es un manejador de paquetes para python con el cual vamos a instalar virtualenv; y virtualenv es una herramienta para crear entornos virtuales de python. Es importante crear entornos virtuales con python en lugar de utilizar el sistema nativo para no tocar configuraciones del sistema y de ese modo evitar conflictos si eventualmente otras cosas en el mismo servidor pudieran necesitar python con configuraciones muy particulares.
+
+Ejecutar los siguientes comandos, uno a la vez, cuando finalice uno, introducir el siguiente, hasta el final.
+```
+- **sudo apt install build-essential python3-pip \-y**  
+- **sudo pip install virtualenv**  
+- **sudo reboot**
+```
+  *En este punto hay que reiniciar el servidor para activar algunas variables de entorno que no se habilitan de manera automática luego de instalar los paquetes previos.*
+
+Instalar GCSFUSE
+```
+- **export GCSFUSE\_REPO=gcsfuse-\`lsb\_release \-c \-s\`**  
+- **echo "deb \[signed-by=/usr/share/keyrings/cloud.google.asc\] https://packages.cloud.google.com/apt $GCSFUSE\_REPO main" | sudo tee /etc/apt/sources.list.d/gcsfuse.list**  
+- **curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo tee /usr/share/keyrings/cloud.google.asc**  
+- **sudo apt-get update**  
+- **sudo apt-get install gcsfuse**   
 ```
 
-### Stop the Docker Images
+## Crear directorios de trabajo
 
-```bash
-docker-compose stop
+En estos directorios, en **venv** crearemos un entorno virtual de python para inicializar el proyecto, en **app** se va a inicializar el proyecto para hacer la instalación.
+
+Ejecutar los siguientes comandos, uno a la vez, cuando finalice uno, introducir el siguiente, hasta el final. 
+```
+- **mkdir \~/src/geonode/venv \-p**  
+- **mkdir \~/src/geonode/app \-p**
+```
+## Activar entorno virtual de python
+
+Dentro del directorio **\~/src/geonode/venv** vamos a crear un entorno virtual de python denominado **DATOSMTY**, el nombre es completamente arbitrario pero se utiliza así debido al contexto que nos ocupa.
+```
+- **cd \~/src/geonode/venv**  
+- **virtualenv DATOSMTY \-p /usr/bin/python3**  
+- **source DATOSMTY/bin/activate**
+```
+## Preparar entorno para construir imagen del contenedor
+
+Ahora que ya tenemos un entorno virtual activo, podemos descargar el código inicial para arrancar el proyecto para construir la imagen del contenedor
+
+```
+- **pip install Django==4.2.10**  
+- **cd \~/src/geonode/app**  
+- **mkdir datosmty**  
+- **GN\_VERSION=datos\_mty**  
+- **django-admin startproject \--template=https://github.com/gobiernodigitalmonterrey/geonode-project/archive/refs/heads/$GN\_VERSION.zip \-e py,sh,md,rst,json,yml,ini,env,sample,properties \-n monitoring-cron \-n Dockerfile datosmty datosmty**
 ```
 
-### Fully Wipe-out the Docker Images
-
-**WARNING**: This will wipe out all the repositories created until now.
-
-**NOTE**: The images must be stopped first
-
-```bash
-docker system prune -a
-```
-
-## Backup and Restore from Docker Images
-
-### Run a Backup
-
-```bash
-SOURCE_URL=$SOURCE_URL TARGET_URL=$TARGET_URL ./{{project_name}}/br/backup.sh $BKP_FOLDER_NAME
-```
-
-- BKP_FOLDER_NAME:
-  Default value = backup_restore
-  Shared Backup Folder name.
-  The scripts assume it is located on "root" e.g.: /$BKP_FOLDER_NAME/
-
-- SOURCE_URL:
-  Source Server URL, the one generating the "backup" file.
-
-- TARGET_URL:
-  Target Server URL, the one which must be synched.
-
-e.g.:
-
-```bash
-docker exec -it django4{{project_name}} sh -c 'SOURCE_URL=$SOURCE_URL TARGET_URL=$TARGET_URL ./{{project_name}}/br/backup.sh $BKP_FOLDER_NAME'
-```
-
-### Run a Restore
-
-```bash
-SOURCE_URL=$SOURCE_URL TARGET_URL=$TARGET_URL ./{{project_name}}/br/restore.sh $BKP_FOLDER_NAME
-```
-
-- BKP_FOLDER_NAME:
-  Default value = backup_restore
-  Shared Backup Folder name.
-  The scripts assume it is located on "root" e.g.: /$BKP_FOLDER_NAME/
-
-- SOURCE_URL:
-  Source Server URL, the one generating the "backup" file.
-
-- TARGET_URL:
-  Target Server URL, the one which must be synched.
-
-e.g.:
-
-```bash
-docker exec -it django4{{project_name}} sh -c 'SOURCE_URL=$SOURCE_URL TARGET_URL=$TARGET_URL ./{{project_name}}/br/restore.sh $BKP_FOLDER_NAME'
-```
 
 ## Recommended: Track your changes
 
